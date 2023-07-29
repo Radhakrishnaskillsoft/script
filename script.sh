@@ -1,4 +1,4 @@
-#!
+#!/bin/sh
 $ apt install curl apt-transport-https gnupg
 
 $ apt install locales
