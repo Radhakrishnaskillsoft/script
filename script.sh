@@ -51,34 +51,21 @@ gem install bundler rake rails
 #Install Gems for Zammad
 bundle config set without "test development mysql"
 bundle install
-
-
-
-#installing Apache
-sudo apt install apache2 -y
-sudo systemctl start apache2
-sudo systemctl enable apache2
-
-#Setup Elastic search
-sudo apt install apt-transport-https sudo wget curl gnupg
-sudo echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main"| \
-  tee -a /etc/apt/sources.list.d/elastic-7.x.list > /dev/null
-sudo curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | \
- sudo gpg --dearmor |sudo tee /etc/apt/trusted.gpg.d/elasticsearch.gpg> /dev/null
-sudo apt update
-sudo apt install elasticsearch
-sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install ingest-attachment -y
-sudo systemctl start elasticsearch
-sudo systemctl enable elasticsearch
-
-#Zammad
-echo "deb https://dl.packager.io/srv/deb/zammad/zammad/stable/ubuntu 22.04 main"| \
-  sudo tee /etc/apt/sources.list.d/zammad.list > /dev/null
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B6D583CCBD33EEB8
-sudo apt update
-sudo apt install zammad -y
+#Configure database settings
+cp config/database/database.yml config/database.yml
+sudo sed -i -e "s/^password=.*$/password=Zammad_password@1!2" -e "s/^POSTGRES_HOST=.*$/POSTGRES_HOST=zammadpostgresql.postgres.database.azure.com/" -e "s/^usernameR=.*$/username=zaamaduser@zammadpostgresql/" config/database.yml
+chmod 600 /opt/zammad/config/database.yml
+chown zammad:zammad /opt/zammad/config/database.yml
+#Initialize your database
+su - zammad
+rake db:create
+rake db:migrate
+rake db:seed
+rails r "Locale.sync"
+rails r "Translation.sync"
+rake assets:precompile
+sudo -i 
+./install-zammad-systemd-services.sh
+cd /opt/zammad/script/systemd
 sudo systemctl start zammad
-sudo systemctl enable zammad
-sudo zammad run rails r "Setting.set('es_url', 'http://localhost:9200')"
-sudo zammad run rake zammad:searchindex:rebuild  
 
